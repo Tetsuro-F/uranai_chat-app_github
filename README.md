@@ -6,7 +6,7 @@
 - 上記機能に加え、タロット占いとChat内でのそれまでの会話内容も踏まえた、占い結果提示をしてくれる。
 
 ## ③アプリのデプロイURL
-
+https://tetsuro-f.github.io/uranai_chat-app_github/
 
 ## ④工夫した点・こだわった点
 - 通常のChat機能は備えて以下を工夫。
