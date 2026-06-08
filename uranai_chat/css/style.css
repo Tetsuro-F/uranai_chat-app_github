@@ -1,0 +1,144 @@
+#output p {
+    margin-bottom: 10px;
+}
+
+#output p span.time {
+    color: #666;
+    font-size: 12px;
+}
+
+#output p {
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+#output p span.time,
+#output p span.uname {
+    font-size: 11px;
+    opacity: 0.7;
+}
+
+/* 吹き出し共通 */
+#output p.mine,
+#output p.other {
+    position: relative;
+    max-width: 60%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    margin-top: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+body {
+    background: #f0f0f0;
+}
+
+.material-symbols-outlined {
+    font-size: 15px !important;
+    font-variation-settings:
+        'FILL' 0,
+        'wght' 200, 
+        'GRAD' 0,
+        'opsz' 15 !important;
+    cursor: pointer;
+    vertical-align: middle;
+}
+
+/* .remove,
+.update {
+    margin-left: 12px;
+} */
+
+#output p span[contenteditable="true"] {
+    margin-right: 8px; /* ← テキストとアイコンの間だけ広がる */
+    display: inline-block; /* ← margin を効かせるために必要 */
+}
+/* #output p span.time {
+    font-size: 11px;
+    opacity: 0.7;
+} */
+
+/* 自分の投稿（右） */
+#output p.mine {
+    margin-left: auto;
+    background: #ffe8b3;
+    text-align: right;
+}
+
+/* 他人の投稿（左） */
+#output p.other {
+    margin-right: auto;
+    background: #ffffff;
+    text-align: left;
+}
+
+/* 三角（右） */
+#output p.mine::after {
+    content: "";
+    position: absolute;
+    right: -10px;
+    top: 12px;
+    border-width: 8px;
+    border-style: solid;
+    border-color: transparent transparent transparent #ffe8b3;
+}
+
+/* 三角（左） */
+#output p.other::after {
+    content: "";
+    position: absolute;
+    left: -10px;
+    top: 12px;
+    border-width: 8px;
+    border-style: solid;
+    border-color: transparent #ffffff transparent transparent;
+}
+
+#output p.mine,
+#output p.other {
+    position: relative;
+    max-width: 60%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    margin-top: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15); /* ← 影を追加 */
+}
+
+.tarot-result {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+    align-items: flex-start;
+}
+
+#output p.mine .tarot-result {
+    flex-direction: row-reverse; /* 自分の投稿はカードを右側に */
+}
+
+.tarot-card {
+    width: 60px;
+    height: auto;
+    border-radius: 6px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+.tarot-text {
+    font-size: 13px;
+    text-align: left;
+}
+
+.tarot-card-name {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.tarot-meaning {
+    line-height: 1.4;
+}
+
+.ai-advice {
+    margin-top: 6px;
+    font-size: 13px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}

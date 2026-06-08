@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="utf-8">
+    <title>Firebase_version9_RealtimeDB(G'sACADEMY初学者用サンプル)</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+</head>
+
+<body>
+
+    <!-- コンテンツ表示画面 -->
+
+    <div>
+        <div> 名前：<input type="text" id="uname">
+            <button id="fortune">タロットを占う</button>
+            <button id="askAI">占い結果について相談する</button>
+        </div>
+        <div>
+            <textarea id="text" cols="30" rows="10"></textarea>
+            <button id="send">送信</button>
+        </div>
+
+        <div id="output" style="overflow: auto; height: 300px;"></div>
+
+    </div>
+    <!--/ コンテンツ表示画面 -->
+
+
+
+    <!-- JQuery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <!-- JQuery -->
+
+    <script src="js/config.js"></script>
+
+    <!--** 以下Firebase **-->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+        import { getDatabase, ref, push, set, update, onChildAdded, remove, onChildChanged, onChildRemoved, get }
+            from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+
+        const localConfig = window.URANAI_CHAT_CONFIG || {};
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = localConfig.firebaseConfig || {
+            apiKey: "YOUR_FIREBASE_WEB_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.firebasestorage.app",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_FIREBASE_APP_ID"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const dbRef = ref(db, "chat");
+        const AI_FUNCTION_URL = localConfig.aiFunctionUrl || "https://YOUR_CLOUD_FUNCTION_URL/";
+        const HISTORY_LIMIT = 20;
+
+        $("#send").on("click", function () {
+            const text = $("#text").val();
+            const msg = {
+                type: "chat",
+                uname: $("#uname").val(),
+                text: text,
+                time: Date.now()
+            };
+            const newPostRef = push(dbRef);
+            set(newPostRef, msg);
+            $("#text").val("");
+        });
+
+        const tarotDeck = [
+            {
+                id: "00_the_fool",
+                name: "愚者",
+                upright: "自由・冒険・無限の可能性",
+                reversed: "無計画・軽率・不安定"
+            },
+            {
+                id: "01_the_magician",
+                name: "魔術師",
+                upright: "創造・行動力・チャンス到来",
+                reversed: "未熟・迷い・準備不足"
+            },
+            {
+                id: "02_the_high_priestess",
+                name: "女教皇",
+                upright: "直感・静けさ・洞察力",
+                reversed: "優柔不断・秘密・閉塞"
+            },
+            {
+                id: "03_the_empress",
+                name: "女帝",
+                upright: "豊かさ・愛情・実り",
+                reversed: "依存・過保護・停滞"
+            },
+            {
+                id: "04_the_emperor",
+                name: "皇帝",
+                upright: "支配・安定・責任",
+                reversed: "独裁・頑固・無責任"
+            },
+            {
+                id: "05_the_hierophant",
+                name: "法王",
+                upright: "伝統・助言・信頼",
+                reversed: "束縛・形式主義・反抗"
+            },
+            {
+                id: "06_the_lovers",
+                name: "恋人",
+                upright: "選択・調和・愛情",
+                reversed: "迷い・不一致・誘惑"
+            },
+            {
+                id: "07_the_chariot",
+                name: "戦車",
+                upright: "勝利・前進・意志の力",
+                reversed: "暴走・挫折・迷走"
+            },
+            {
+                id: "08_strength",
+                name: "力",
+                upright: "勇気・忍耐・優しさ",
+                reversed: "弱気・不安・自己否定"
+            },
+            {
+                id: "09_the_hermit",
+                name: "隠者",
+                upright: "探求・内省・成熟",
+                reversed: "孤立・停滞・閉じこもり"
+            },
+            {
+                id: "10_wheel_of_fortune",
+                name: "運命の輪",
+                upright: "好転・チャンス・幸運",
+                reversed: "停滞・タイミングの悪さ・不運"
+            },
+            {
+                id: "11_justice",
+                name: "正義",
+                upright: "公平・決断・バランス",
+                reversed: "不正・偏り・誤判断"
+            },
+            {
+                id: "12_the_hanged_man",
+                name: "吊るされた男",
+                upright: "献身・視点の転換・忍耐",
+                reversed: "停滞・無駄・自己犠牲のしすぎ"
+            },
+            {
+                id: "13_death",
+                name: "死神",
+                upright: "終わりと始まり・変容",
+                reversed: "停滞・拒絶・変化への抵抗"
+            },
+            {
+                id: "14_temperance",
+                name: "節制",
+                upright: "調和・節度・バランス",
+                reversed: "不調和・浪費・極端"
+            },
+            {
+                id: "15_the_devil",
+                name: "悪魔",
+                upright: "誘惑・依存・執着",
+                reversed: "解放・克服・覚醒"
+            },
+            {
+                id: "16_the_tower",
+                name: "塔",
+                upright: "崩壊・衝撃・リセット",
+                reversed: "回避・軽減・再構築"
+            },
+            {
+                id: "17_the_star",
+                name: "星",
+                upright: "希望・癒し・インスピレーション",
+                reversed: "失望・不安・自信喪失"
+            },
+            {
+                id: "18_the_moon",
+                name: "月",
+                upright: "不安・幻想・直感",
+                reversed: "明確化・解放・誤解の解消"
+            },
+            {
+                id: "19_the_sun",
+                name: "太陽",
+                upright: "成功・幸福・活力",
+                reversed: "停滞・過信・空回り"
+            },
+            {
+                id: "20_judgement",
+                name: "審判",
+                upright: "復活・決断・再生",
+                reversed: "迷い・未練・停滞"
+            },
+            {
+                id: "21_the_world",
+                name: "世界",
+                upright: "完成・達成・調和",
+                reversed: "未完・停滞・中途半端"
+            },
+
+
+        ];
+
+        function drawTarotCard() {
+            const card = tarotDeck[Math.floor(Math.random() * tarotDeck.length)];
+            const isUpright = Math.random() < 0.5; // 50%で正位置/逆位置
+            return {
+                id: card.id,
+                name: card.name,
+                position: isUpright ? "正位置" : "逆位置",
+                meaning: isUpright ? card.upright : card.reversed
+            };
+        };
+
+        // ▼ Gemini に質問する関数（完全無料）
+        async function askGemini(prompt) {
+            try {
+                const response = await fetch(AI_FUNCTION_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: prompt })
+                });
+
+                const responseText = await response.text();
+                const data = responseText ? JSON.parse(responseText) : {};
+                console.log("askGemini response:", response.status, data);
+
+                if (!response.ok || !data.reply) {
+                    console.error("Gemini API error:", data);
+                    return data.message || "AIからの返答を取得できませんでした。時間をおいてもう一度お試しください。";
+                }
+
+                return data.reply;
+
+            } catch (error) {
+                console.error("Fetch error:", error);
+                return "AIからの返答を取得できませんでした。時間をおいてもう一度お試しください。";
+            }
+        }
+
+        function buildAiPrompt(msg, userQuestion, conversationHistory = []) {
+            const historyText = conversationHistory.length
+                ? conversationHistory.map(item => `${item.speaker}: ${item.text}`).join("\n")
+                : "まだ会話履歴はありません。";
+
+            return `
+         あなたは優しいタロット占い師です。
+         以下のタロット結果とこれまでの会話を踏まえて、ユーザーの相談に答えてください。
+
+         【カード】${msg.cardName}（${msg.position}） 
+         【意味】${msg.meaning}
+
+         【これまでの会話】
+         ${historyText}
+
+         【ユーザーの質問】 
+         ${userQuestion}
+
+         ユーザーが前向きに行動できるよう、具体的で温かいアドバイスを返してください。
+         `;
+        }
+
+
+
+        $("#fortune").on("click", function () {
+            const uname = $("#uname").val();
+            if (!uname) {
+                alert("名前を入力してください");
+                return;
+            }
+
+            const card = drawTarotCard();
+
+            const msg = {
+                type: "fortune",             // ← 占いメッセージ
+                uname: uname,
+                cardId: card.id,
+                cardName: card.name,
+                position: card.position,
+                meaning: card.meaning,
+                time: Date.now()
+            };
+
+            const newPostRef = push(dbRef);
+            set(newPostRef, msg);
+        });
+
+        $("#askAI").on("click", async function () {
+            const uname = $("#uname").val();
+            if (!uname) {
+                alert("名前を入力してください");
+                return;
+            }
+
+            const userQuestion = prompt("占い結果について相談したいことを入力してください：");
+            if (!userQuestion) return;
+
+            // 同じユーザーの最新の占い結果を取得
+            const messages = await get(dbRef);
+            const allMessages = [];
+
+            messages.forEach(child => {
+                const m = child.val();
+                allMessages.push(m);
+            });
+
+            allMessages.sort((a, b) => (a.time || 0) - (b.time || 0));
+            const lastFortune = [...allMessages]
+                .reverse()
+                .find(m => m.type === "fortune" && m.uname === uname);
+
+            if (!lastFortune) {
+                alert("まだ占い結果がありません");
+                return;
+            }
+
+            const conversationHistory = allMessages
+                .filter(m => m.type === "chat" || m.type === "ai")
+                .filter(m => {
+                    if (m.type === "chat") return m.uname === uname;
+                    if (m.type === "ai") return m.forUname === uname;
+                    return false;
+                })
+                .slice(-HISTORY_LIMIT)
+                .map(m => ({
+                    speaker: m.type === "ai" ? "占い師AI" : (m.uname || "ユーザー"),
+                    text: m.text || ""
+                }));
+
+            // AIに送るプロンプトを作成
+            const promptText = buildAiPrompt(lastFortune, userQuestion, conversationHistory);
+
+            const userMsgRef = push(dbRef);
+            set(userMsgRef, {
+                type: "chat",
+                uname: uname,
+                text: userQuestion,
+                time: Date.now()
+            });
+
+            // AIに問い合わせ
+            const aiReply = await askGemini(promptText);
+            console.log("aiReply:", aiReply);
+
+            // AIの返答を Firebase に保存
+            const msg = {
+                type: "ai",
+                uname: "占い師AI",
+                forUname: uname,
+                text: aiReply,
+                time: Date.now()
+            };
+
+            const newPostRef = push(dbRef);
+            set(newPostRef, msg);
+        });
+
+        function escapeHtml(value) {
+            return String(value ?? "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+
+
+
+
+        onChildAdded(dbRef, function (data) {
+            const msg = data.val();
+            const key = data.key;
+            // 時刻を「時:分」に整形
+            const date = new Date(msg.time);
+            const timeString = date.toLocaleTimeString("ja-JP", {
+                hour: "2-digit",
+                minute: "2-digit"
+            });
+
+            // ★ 自分の投稿かどうか判定
+            const isMine = (msg.uname === $("#uname").val());
+
+            let h = '<p id="' + key + '" class="' + (isMine ? 'mine' : 'other') + '">';
+            // h += msg.uname + '<span class="time">（' + timeString + '）</span>';
+            h += '<span class="uname">' + escapeHtml(msg.uname) + '</span>';
+            h += '<span class="time">（' + timeString + '）</span>';
+            // h += '<div class="meta-line">';
+            // h += '  <span class="uname">' + msg.uname + '</span>';
+            // h += '  <span class="time">（' + timeString + '）</span>';
+            // h += '</div>';
+            // ▼ メッセージの中身を type で分岐
+            if (msg.type === "fortune") {
+                // 占い結果表示
+                h += '<div class="tarot-result">';
+                h += '  <img class="tarot-card" src="img/tarot/' + escapeHtml(msg.cardId) + '.png" alt="' + escapeHtml(msg.cardName) + '">';
+                h += '  <div class="tarot-text">';
+                h += '    <div class="tarot-card-name">【' + escapeHtml(msg.cardName) + '（' + escapeHtml(msg.position) + '）】</div>';
+                h += '    <div class="tarot-meaning">' + escapeHtml(msg.meaning) + '</div>';
+                h += '  </div>';
+                h += '</div>';
+            } else if (msg.type === "ai") {
+                h += '<div class="ai-advice">' + escapeHtml(msg.text) + '</div>';
+            } else {
+                h += '<span contentEditable="true" id="' + key + '_update">' + escapeHtml(msg.text) + '</span>';
+                h += '<span class="remove material-symbols-outlined" data-key="' + key + '">delete</span>';
+                h += '<span class="update material-symbols-outlined" data-key="' + key + '">refresh</span>';
+            }
+            h += '</p>';
+            $("#output").append(h);
+        });
+
+        // 削除イベント
+        $("#output").on("click", ".remove", function () {
+            const key = $(this).attr("data-key");
+            const remove_item = ref(db, "chat/" + key);
+            remove(remove_item);
+        });
+
+        // 更新イベント
+        $("#output").on("click", ".update", function () {
+            const key = $(this).attr("data-key");
+            update(ref(db, "chat/" + key), {
+                text: $("#" + key + '_update').html()
+            });
+        });
+
+        onChildRemoved(dbRef, (data) => {
+            $("#" + data.key).remove();
+        });
+
+        onChildChanged(dbRef, (data) => {
+            $("#" + data.key + '_update').html(data.val().text);
+            $("#" + data.key + '_update').fadeOut(800).fadeIn(800);
+        });
+
+        $("#text").on("keydown", function (e) {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault(); // 改行を防ぐ
+                $("#send").click(); // 送信ボタンを押すのと同じ
+            }
+        });
+
+
+    </script>
+
+
+</body>
+
+</html>
