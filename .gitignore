@@ -82,7 +82,7 @@ serviceAccount*.json
 *.pem
 *.p12
 *.key
-uranai_chat/js/config.js
+js/config.js
 
 # dataconnect generated files
 .dataconnect
